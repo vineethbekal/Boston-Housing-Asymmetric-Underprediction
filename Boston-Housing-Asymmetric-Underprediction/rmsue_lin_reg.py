@@ -31,17 +31,10 @@ def compute_Phi(x, p):
 
 # --------------------------
 def compute_yhat(Phi, w):
-    '''
-        Compute the linear predicted value yhat = <w, x>
-
-        Input:
-            Phi: numpy array (n,p)
-            w: numpy array (p,)
-        Output:
-            yhat: numpy array (n,)
-    '''
-    yhat = np.dot(Phi, w)
-    return yhat
+    # If shapes mismatched by 1, add bias column
+    if Phi.shape[1] + 1 == w.shape[0]:
+        Phi = np.hstack((np.ones((Phi.shape[0], 1)), Phi))
+    return Phi @ w
 
 
 # --------------------------
@@ -83,25 +76,20 @@ def update_w(w, dL_dw, alpha=0.001):
 def train(X, Y, alpha=0.001, n_epoch=100):
     '''
         Train the linear regression model using gradient descent.
-
-        Input:
-            X: numpy array (n,p)
-            Y: numpy array (n,)
-        Output:
-            w: numpy array (p,)
+        Automatically adds an intercept column so the model can shift predictions.
     '''
-    # initialize weights
+    # ---- ADD INTERCEPT COLUMN ----
+    if X.ndim == 1:
+        X = X.reshape(-1, 1)
+    bias = np.ones((X.shape[0], 1))
+    X = np.hstack((bias, X))   # <---- ADD THIS
+
+    # initialize weights (now p+1 parameters)
     w = np.zeros(X.shape[1])
 
     for _ in range(n_epoch):
-
-        # Forward step
         yhat = compute_yhat(X, w)
-
-        # Backprop: compute gradient
         dL_dw = compute_dL_dw(Y, yhat, X)
-
-        # Update weights
         w = update_w(w, dL_dw, alpha)
 
     return w

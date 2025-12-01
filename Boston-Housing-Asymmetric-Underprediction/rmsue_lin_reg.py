@@ -76,9 +76,8 @@ def update_w(w, dL_dw, alpha=0.001):
 def train(X, Y, alpha=0.001, n_epoch=100):
     '''
         Train the linear regression model using gradient descent.
-        Automatically adds an intercept column so the model can shift predictions.
     '''
-    # ---- ADD INTERCEPT COLUMN ----
+    # Adding bias column
     if X.ndim == 1:
         X = X.reshape(-1, 1)
     bias = np.ones((X.shape[0], 1))

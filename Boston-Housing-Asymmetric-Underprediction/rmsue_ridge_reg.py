@@ -1,12 +1,8 @@
 import numpy as np
 
-
-# ============================================================
-#  Utility: Add intercept column (bias = 1)
-# ============================================================
 def add_intercept(X):
     """
-    Ensures X has a leading column of 1s.
+    Ensures X has a leading column of 1s as a bias column.
     """
     X = np.asarray(X)
     if X.ndim == 1:
@@ -14,10 +10,6 @@ def add_intercept(X):
     bias = np.ones((X.shape[0], 1))
     return np.hstack((bias, X))
 
-
-# ============================================================
-#  Polynomial Phi (kept unchanged for compatibility)
-# ============================================================
 def compute_Phi(x, p):
     """
     Builds polynomial feature matrix of degree p.
@@ -26,9 +18,6 @@ def compute_Phi(x, p):
     return np.vstack(Phi).T
 
 
-# ============================================================
-#  Prediction
-# ============================================================
 def compute_yhat_ridge(X, w):
     """
     Linear prediction y = Xw.
@@ -46,17 +35,11 @@ def compute_yhat_ridge(X, w):
     return X @ w
 
 
-# ============================================================
-#  MSUE Loss: (1/2) * mean( max(y - yhat, 0)^2 )
-# ============================================================
 def compute_msue(yhat, y):
     u = np.maximum(y - yhat, 0.0)
     return 0.5 * np.mean(u ** 2)
 
 
-# ============================================================
-#  Ridge-regularized gradient of MSUE
-# ============================================================
 def compute_dL_dw(y, yhat, X, w, lambda_ridge):
     """
     Gradient of MSUE + Ridge penalty.
@@ -68,28 +51,17 @@ def compute_dL_dw(y, yhat, X, w, lambda_ridge):
     if X.ndim == 1:
         X = X.reshape(-1, 1)
 
-    # errors only for under-predictions
     errors = (yhat - y) * (yhat < y)
-
-    # MSUE gradient
     grad = (errors @ X) / X.shape[0]
-
-    # Ridge penalty (skip bias term w[0])
     ridge_grad = np.concatenate([[0.0], lambda_ridge * w[1:]])
 
     return grad + ridge_grad
 
 
-# ============================================================
-#  Weight update (GD)
-# ============================================================
 def update_w(w, grad, alpha):
     return w - alpha * grad
 
 
-# ============================================================
-#  Training: Ridge + MSUE
-# ============================================================
 def train_ridge(X, Y, alpha=0.001, n_epoch=100, lambda_ridge=0.0):
     """
     Trains a ridge-regularized linear regression model
@@ -103,10 +75,10 @@ def train_ridge(X, Y, alpha=0.001, n_epoch=100, lambda_ridge=0.0):
         lambda_ridge : ridge strength (L2)
     """
 
-    # Always add intercept
+    # Always add the intercept
     X = add_intercept(X)
 
-    # Initialize weights
+    # Initializing weights
     w = np.zeros(X.shape[1])
 
     for _ in range(n_epoch):

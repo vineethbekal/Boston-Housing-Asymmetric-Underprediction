@@ -38,28 +38,32 @@ def compute_yhat(Phi, w):
 
 
 # --------------------------
-def compute_L(yhat, y):
-    '''
-        Compute the (modified) mean squared error:
-            L = (1/2) * mean( max(y - yhat, 0)^2 )
-    '''
-    u = np.maximum(y - yhat, 0.0)   # under-prediction per sample
-    L = np.mean(u**2) / 2.0
-    return L
+def compute_L(yhat, y, gamma=1.0):
+    """
+    Asymmetric squared error:
+      - Under-prediction (y > yhat): gamma * (y - yhat)^2
+      - Over-prediction:             1 * (y - yhat)^2
+    """
+    err = y - yhat
+    under = (err > 0)               # boolean mask
+
+    weighted_sq = err**2
+    weighted_sq[under] *= gamma     # apply penalty only to under-prediction
+
+    return 0.5 * np.mean(weighted_sq)
+
 
 
 # --------------------------
-def compute_dL_dw(y, yhat, Phi):
-    '''
-        Compute gradient of L w.r.t. weights w.
-    '''
+def compute_dL_dw(y, yhat, Phi, gamma=1.0):
     n = y.shape[0]
+    err = yhat - y
 
-    # errors only when yhat < y
-    errors = (yhat - y) * (yhat < y)
+    weights = np.ones_like(err)
+    weights[y > yhat] = gamma   # under-prediction penalty
 
-    dL_dw = np.dot(errors, Phi) / n
-    return dL_dw
+    grad = (weights * err) @ Phi / n
+    return grad
 
 
 # --------------------------
@@ -73,22 +77,18 @@ def update_w(w, dL_dw, alpha=0.001):
 
 
 # --------------------------
-def train(X, Y, alpha=0.001, n_epoch=100):
-    '''
-        Train the linear regression model using gradient descent.
-    '''
-    # Adding bias column
+def train(X, Y, alpha=0.001, n_epoch=100, gamma=1.0):
     if X.ndim == 1:
         X = X.reshape(-1, 1)
-    bias = np.ones((X.shape[0], 1))
-    X = np.hstack((bias, X))   # <---- ADD THIS
 
-    # initialize weights (now p+1 parameters)
+    bias = np.ones((X.shape[0], 1))
+    X = np.hstack((bias, X))
+
     w = np.zeros(X.shape[1])
 
     for _ in range(n_epoch):
         yhat = compute_yhat(X, w)
-        dL_dw = compute_dL_dw(Y, yhat, X)
+        dL_dw = compute_dL_dw(Y, yhat, X, gamma=gamma)
         w = update_w(w, dL_dw, alpha)
 
     return w
